@@ -1,104 +1,46 @@
-import os
-import re
+from bs4 import BeautifulSoup
 import requests
-from datetime import datetime
-
-PRODUCT_CODE = "F235926"
-
-URL = f"https://www.ctfmall.com/goods?mouldNo={PRODUCT_CODE}"
-
+import re
 
 def get_current_price():
+
+    url = "https://www.ctfmall.com/goods?mouldNo=F235926"
 
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
 
     resp = requests.get(
-        URL,
+        url,
         headers=headers,
         timeout=30
     )
 
-    print("========== 页面调试 ==========")
-    print("状态码:", resp.status_code)
-    print("最终URL:", resp.url)
+    soup = BeautifulSoup(resp.text, "html.parser")
 
-    html = resp.text
+    price_div = soup.select_one(".price-show")
 
-    print("页面长度:", len(html))
-    print("前2000字符:")
-    print(html[:2000])
+    if price_div:
 
-    print("========== 查找价格 ==========")
+        text = price_div.get_text(" ", strip=True)
 
-    matches = re.findall(
-        r"[0-9]{4,6}\.[0-9]{2}",
-        html
-    )
+        print("price-show内容:")
+        print(text)
 
-    print("发现数字:")
-    print(matches[:20])
+        match = re.search(
+            r"([0-9,]+\.[0-9]{2})",
+            text
+        )
 
-    print("=============================")
+        if match:
+            price = float(
+                match.group(1).replace(",", "")
+            )
 
-    return "调试模式"
+            print("解析价格:", price)
 
+            return price
 
-def send_feishu(message):
+    print("未找到价格")
 
-    webhook = os.getenv("FEISHU_WEBHOOK")
-
-    print("========== FEISHU DEBUG ==========")
-
-    if webhook:
-        print("Webhook已读取")
-        print("长度:", len(webhook))
-    else:
-        print("Webhook未读取")
-
-    print("=================================")
-
-    if not webhook:
-        return
-
-    data = {
-        "msg_type": "text",
-        "content": {
-            "text": message
-        }
-    }
-
-    resp = requests.post(
-        webhook,
-        json=data,
-        timeout=20
-    )
-
-    print("飞书状态码:", resp.status_code)
-    print("飞书返回:", resp.text)
-
-
-def main():
-
-    price = get_current_price()
-
-    msg = f"""
-【周大福价格监控】
-
-商品型号: {PRODUCT_CODE}
-
-当前价格:
-{price}
-
-检查时间:
-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-"""
-
-    print(msg)
-
-    send_feishu(msg)
-
-
-if __name__ == "__main__":
-    main()
+    return None
