@@ -26,9 +26,7 @@ def get_current_price():
         "html.parser"
     )
 
-    price_div = soup.select_one(
-        ".price-show"
-    )
+    price_div = soup.select_one(".price-show")
 
     if not price_div:
         print("未找到 price-show")
@@ -43,11 +41,10 @@ def get_current_price():
     print(text)
 
     text = (
-        text
-        .replace("¥", "")
-        .replace("起", "")
-        .replace(",", "")
-        .strip()
+        text.replace("¥", "")
+            .replace("起", "")
+            .replace(",", "")
+            .strip()
     )
 
     print("清洗后:")
@@ -70,27 +67,13 @@ def get_current_price():
 
     return price
 
-    print("未找到价格")
-
-    return None
-
 
 def send_feishu(message):
 
-    webhook = os.getenv(
-        "FEISHU_WEBHOOK"
-    )
+    webhook = os.getenv("FEISHU_WEBHOOK")
 
-    print("========== FEISHU ==========")
-
-    if webhook:
-
-        print("Webhook存在")
-        print("Webhook长度:", len(webhook))
-
-    else:
-
-        print("Webhook不存在")
+    if not webhook:
+        print("未配置 FEISHU_WEBHOOK")
         return
 
     data = {
@@ -100,48 +83,37 @@ def send_feishu(message):
         }
     }
 
-    try:
+    resp = requests.post(
+        webhook,
+        json=data,
+        timeout=20
+    )
 
-        resp = requests.post(
-            webhook,
-            json=data,
-            timeout=20
-        )
-
-        print(
-            "飞书状态码:",
-            resp.status_code
-        )
-
-        print(
-            "飞书返回:",
-            resp.text
-        )
-
-    except Exception as e:
-
-        print(
-            "飞书发送异常:",
-            str(e)
-        )
+    print("飞书状态码:", resp.status_code)
+    print("飞书返回:", resp.text)
 
 
 def main():
 
     price = get_current_price()
 
-msg = f"""
+    if price is None:
+        price_text = "获取失败"
+    else:
+        price_text = f"¥{price:,.2f}"
+
+    msg = f"""
 【周大福价格监控】
 
-型号: {PRODUCT_CODE}
+商品型号: {PRODUCT_CODE}
 
-当前售价:
-¥{price:,.2f}
+当前价格:
+{price_text}
 
 商品链接:
 {URL}
 
-时间:
+检查时间:
 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
 
