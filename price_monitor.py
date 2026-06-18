@@ -8,92 +8,117 @@ PRODUCT_CODE = "F235926"
 
 URL = f"https://www.ctfmall.com/goods?mouldNo={PRODUCT_CODE}"
 
-
-from playwright.sync_api import sync_playwright
-
-
-
 def get_current_price():
 
-    with sync_playwright() as p:
+```
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
 
-        browser = p.chromium.launch(
-            headless=True
-        )
+resp = requests.get(
+    URL,
+    headers=headers,
+    timeout=30
+)
 
-        page = browser.new_page()
+print("状态码:", resp.status_code)
+print("HTML长度:", len(resp.text))
 
-        page.goto(
-            URL,
-            wait_until="networkidle",
-            timeout=60000
-        )
+print(
+    "price-show存在:",
+    "price-show" in resp.text
+)
 
-        page.wait_for_timeout(5000)
+print("HTML前1000字符:")
+print(resp.text[:1000])
 
-        price_text = page.locator(
-            ".price-show"
-        ).inner_text()
+soup = BeautifulSoup(
+    resp.text,
+    "html.parser"
+)
 
-        print("price-show:")
-        print(price_text)
+price_div = soup.select_one(
+    ".price-show"
+)
 
-        browser.close()
+if not price_div:
+    print("未找到 .price-show")
+    return None
 
-    text = (
-        price_text
-        .replace("¥", "")
+text = price_div.get_text(
+    "",
+    strip=True
+)
+
+print("price-show内容:")
+print(text)
+
+text = (
+    text.replace("¥", "")
         .replace("起", "")
         .replace(",", "")
         .strip()
-    )
+)
 
-    match = re.search(
-        r"(\d+\.\d+)",
-        text
-    )
+match = re.search(
+    r"(\d+\.\d+)",
+    text
+)
 
-    if not match:
-        return None
+if not match:
+    print("价格解析失败")
+    return None
 
-    return float(match.group(1))
+price = float(
+    match.group(1)
+)
 
+print("解析价格:", price)
+
+return price
+```
 
 def send_feishu(message):
 
-    webhook = os.getenv("FEISHU_WEBHOOK")
+```
+webhook = os.getenv(
+    "FEISHU_WEBHOOK"
+)
 
-    if not webhook:
-        print("未配置 FEISHU_WEBHOOK")
-        return
+if not webhook:
+    print("未配置 FEISHU_WEBHOOK")
+    return
 
-    data = {
-        "msg_type": "text",
-        "content": {
-            "text": message
-        }
+data = {
+    "msg_type": "text",
+    "content": {
+        "text": message
     }
+}
 
-    resp = requests.post(
-        webhook,
-        json=data,
-        timeout=20
-    )
+resp = requests.post(
+    webhook,
+    json=data,
+    timeout=20
+)
 
-    print("飞书状态码:", resp.status_code)
-    print("飞书返回:", resp.text)
-
+print("飞书状态码:", resp.status_code)
+print("飞书返回:", resp.text)
+```
 
 def main():
 
-    price = get_current_price()
+```
+price = get_current_price()
 
-    if price is None:
-        price_text = "获取失败"
-    else:
-        price_text = f"¥{price:,.2f}"
+if price is None:
+    price_text = "获取失败"
+else:
+    price_text = f"¥{price:,.2f}"
 
-    msg = f"""
+msg = f"""
+```
+
 【周大福价格监控】
 
 商品型号: {PRODUCT_CODE}
@@ -108,10 +133,11 @@ def main():
 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
 
-    print(msg)
+```
+print(msg)
 
-    send_feishu(msg)
+send_feishu(msg)
+```
 
-
-if __name__ == "__main__":
-    main()
+if **name** == "**main**":
+main()
