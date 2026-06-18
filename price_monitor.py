@@ -24,54 +24,11 @@ def get_current_price():
     print("状态码:", resp.status_code)
     print("HTML长度:", len(resp.text))
 
-    print(
-        "price-show存在:",
-        "price-show" in resp.text
-    )
+    print("========== 页面前3000字符 ==========")
+    print(resp.text[:3000])
+    print("===================================")
 
-    print("HTML前1000字符:")
-    print(resp.text[:1000])
-
-    soup = BeautifulSoup(
-        resp.text,
-        "html.parser"
-    )
-
-    price_div = soup.select_one(".price-show")
-
-    if not price_div:
-        print("未找到 .price-show")
-        return None
-
-    text = price_div.get_text(
-        "",
-        strip=True
-    )
-
-    print("price-show内容:")
-    print(text)
-
-    text = (
-        text.replace("¥", "")
-            .replace("起", "")
-            .replace(",", "")
-            .strip()
-    )
-
-    match = re.search(
-        r"(\d+\.\d+)",
-        text
-    )
-
-    if not match:
-        print("价格解析失败")
-        return None
-
-    price = float(match.group(1))
-
-    print("解析价格:", price)
-
-    return price
+    return None
 
 
 def send_feishu(message):
