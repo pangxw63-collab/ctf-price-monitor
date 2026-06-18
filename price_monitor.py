@@ -9,46 +9,44 @@ PRODUCT_CODE = "F235926"
 URL = f"https://www.ctfmall.com/goods?mouldNo={PRODUCT_CODE}"
 
 
+from playwright.sync_api import sync_playwright
+
+
+
 def get_current_price():
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    with sync_playwright() as p:
 
-    resp = requests.get(
-        URL,
-        headers=headers,
-        timeout=30
-    )
+        browser = p.chromium.launch(
+            headless=True
+        )
 
-    soup = BeautifulSoup(
-        resp.text,
-        "html.parser"
-    )
+        page = browser.new_page()
 
-    price_div = soup.select_one(".price-show")
+        page.goto(
+            URL,
+            wait_until="networkidle",
+            timeout=60000
+        )
 
-    if not price_div:
-        print("未找到 price-show")
-        return None
+        page.wait_for_timeout(5000)
 
-    text = price_div.get_text(
-        "",
-        strip=True
-    )
+        price_text = page.locator(
+            ".price-show"
+        ).inner_text()
 
-    print("price-show原始内容:")
-    print(text)
+        print("price-show:")
+        print(price_text)
+
+        browser.close()
 
     text = (
-        text.replace("¥", "")
-            .replace("起", "")
-            .replace(",", "")
-            .strip()
+        price_text
+        .replace("¥", "")
+        .replace("起", "")
+        .replace(",", "")
+        .strip()
     )
-
-    print("清洗后:")
-    print(text)
 
     match = re.search(
         r"(\d+\.\d+)",
@@ -56,16 +54,9 @@ def get_current_price():
     )
 
     if not match:
-        print("价格解析失败")
         return None
 
-    price = float(
-        match.group(1)
-    )
-
-    print("解析价格:", price)
-
-    return price
+    return float(match.group(1))
 
 
 def send_feishu(message):
