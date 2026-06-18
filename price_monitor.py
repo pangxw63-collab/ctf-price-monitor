@@ -1,44 +1,60 @@
 import os
-import json
+import requests
 from datetime import datetime
-
-# TODO:
-# 1. 找到周大福商品接口或网页链接
-# 2. 在 get_current_price() 中实现实际抓取逻辑
 
 PRODUCT_CODE = "F234661"
 
+
 def get_current_price():
-    # 示例价格，请替换为真实抓取逻辑
+    """
+    临时测试价格
+    后面替换成周大福真实抓取逻辑
+    """
     return 13336.62
+
+
+def send_feishu(message):
+    webhook = os.getenv("FEISHU_WEBHOOK")
+
+    if not webhook:
+        print("未配置 FEISHU_WEBHOOK")
+        return
+
+    data = {
+        "msg_type": "text",
+        "content": {
+            "text": message
+        }
+    }
+
+    resp = requests.post(
+        webhook,
+        json=data,
+        timeout=20
+    )
+
+    print("飞书返回状态:", resp.status_code)
+    print("飞书返回内容:", resp.text)
+
 
 def main():
     price = get_current_price()
 
-    history_file = "price_history.json"
+    message = f"""
+【周大福价格监控】
 
-    if os.path.exists(history_file):
-        with open(history_file, "r", encoding="utf-8") as f:
-            history = json.load(f)
-    else:
-        history = []
+商品型号：{PRODUCT_CODE}
 
-    last_price = history[-1]["price"] if history else None
+当前价格：¥{price}
 
-    history.append({
-        "time": datetime.now().isoformat(),
-        "price": price
-    })
+检查时间：
+{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
 
-    with open(history_file, "w", encoding="utf-8") as f:
-        json.dump(history, f, ensure_ascii=False, indent=2)
+    print(message)
 
-    print(f"商品 {PRODUCT_CODE}")
-    print(f"当前价格: ¥{price}")
+    send_feishu(message)
 
-    if last_price is not None:
-        diff = round(price - last_price, 2)
-        print(f"较上次变化: {diff:+.2f}")
 
 if __name__ == "__main__":
     main()
