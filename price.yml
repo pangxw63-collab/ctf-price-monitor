@@ -16,6 +16,9 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install requests beautifulsoup4
+      - run: pip install -r requirements.txt
 
-      - run: python price_monitor.py
+      - name: Run Monitor
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: python price_monitor.py
