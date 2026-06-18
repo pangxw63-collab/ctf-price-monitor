@@ -1,5 +1,6 @@
 import requests
 import os
+import re
 
 # 商品参数
 WEIGHT = 19.23
@@ -9,21 +10,22 @@ LABOR_FEE = 620
 FEISHU_WEBHOOK = os.getenv("FEISHU_WEBHOOK")
 
 
-def get_gold_price():
-    url = "https://push2.eastmoney.com/api/qt/stock/get"
 
-    params = {
-        "secid": "113.AU9999",
-        "fields": "f43"
+def get_gold_price():
+    url = "https://www.cngold.org/quote/gjs/swhj.html"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0"
     }
 
-    r = requests.get(url, params=params, timeout=20)
+    html = requests.get(url, headers=headers).text
 
-    data = r.json()
+    m = re.search(r'现货黄金.*?([\d.]+)', html)
 
-    price = data["data"]["f43"] / 100
+    if not m:
+        raise Exception("获取金价失败")
 
-    return price
+    return float(m.group(1))
 
 print(get_gold_price())
 
