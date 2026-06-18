@@ -1,8 +1,6 @@
 name: ChowTaiFook Monitor
 
 on:
-  schedule:
-    - cron: "0 1 * * *"
   workflow_dispatch:
 
 jobs:
@@ -16,6 +14,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install requests beautifulsoup4
+      - run: pip install -r requirements.txt
 
-      - run: python price_monitor.py
+      - name: Debug Secret
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: |
+          python -c "import os;print('FOUND' if os.getenv('FEISHU_WEBHOOK') else 'NOT_FOUND')"
+
+      - name: Run Monitor
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: python price_monitor.py
