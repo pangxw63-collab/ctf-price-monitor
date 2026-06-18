@@ -10,20 +10,22 @@ FEISHU_WEBHOOK = os.getenv("FEISHU_WEBHOOK")
 
 
 def get_gold_price():
-    """
-    获取实时黄金价格
-    """
-    url = "https://api.jijinhao.com/quoteCenter/realTime.htm?codes=JO_71"
+    url = "https://push2.eastmoney.com/api/qt/stock/get"
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
+    params = {
+        "secid": "113.AU9999",
+        "fields": "f43"
     }
 
-    r = requests.get(url, headers=headers, timeout=20)
+    r = requests.get(url, params=params, timeout=20)
 
-    data = r.text.split('"')[1].split(',')
+    data = r.json()
 
-    return float(data[1])
+    price = data["data"]["f43"] / 100
+
+    return price
+
+print(get_gold_price())
 
 
 def send_feishu(text):
