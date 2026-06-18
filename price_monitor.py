@@ -15,33 +15,14 @@ def get_current_price():
         "User-Agent": "Mozilla/5.0"
     }
 
-    print("========== 请求页面 ==========")
-
     resp = requests.get(
         URL,
         headers=headers,
         timeout=30
     )
 
-    print("状态码:", resp.status_code)
-    print("最终URL:", resp.url)
-
-    html = resp.text
-
-    print("页面长度:", len(html))
-
-    print("========== HTML前500字符 ==========")
-    print(html[:500])
-
-    print("=================================")
-
-    print(
-        "是否存在price-show:",
-        "price-show" in html
-    )
-
     soup = BeautifulSoup(
-        html,
+        resp.text,
         "html.parser"
     )
 
@@ -49,31 +30,45 @@ def get_current_price():
         ".price-show"
     )
 
-    if price_div:
+    if not price_div:
+        print("未找到 price-show")
+        return None
 
-        text = price_div.get_text(
-            " ",
-            strip=True
-        )
+    text = price_div.get_text(
+        "",
+        strip=True
+    )
 
-        print("price-show内容:")
-        print(text)
+    print("price-show原始内容:")
+    print(text)
 
-        match = re.search(
-            r"([0-9,]+\.[0-9]{2})",
-            text
-        )
+    text = (
+        text
+        .replace("¥", "")
+        .replace("起", "")
+        .replace(",", "")
+        .strip()
+    )
 
-        if match:
+    print("清洗后:")
+    print(text)
 
-            price = float(
-                match.group(1)
-                .replace(",", "")
-            )
+    match = re.search(
+        r"(\d+\.\d+)",
+        text
+    )
 
-            print("解析价格:", price)
+    if not match:
+        print("价格解析失败")
+        return None
 
-            return price
+    price = float(
+        match.group(1)
+    )
+
+    print("解析价格:", price)
+
+    return price
 
     print("未找到价格")
 
@@ -135,15 +130,18 @@ def main():
 
     price = get_current_price()
 
-    msg = f"""
+msg = f"""
 【周大福价格监控】
 
-商品型号: {PRODUCT_CODE}
+型号: {PRODUCT_CODE}
 
-当前价格:
-{price}
+当前售价:
+¥{price:,.2f}
 
-检查时间:
+商品链接:
+{URL}
+
+时间:
 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
 
